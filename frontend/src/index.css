@@ -1,0 +1,121 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+@import "tw-animate-css";
+@import "shadcn/tailwind.css";
+@import "@fontsource-variable/geist";
+
+:root {
+  /* Core Colors */
+  --background: #030303;
+  --foreground: #ebebeb;
+  --primary: #0083ff;
+  --secondary: #121212;
+  --muted: #161616;
+  --accent: #0083ff;
+
+  /* Semantic Colors */
+  --card: #070707;
+  --popover: #0b0b0b;
+  --border: #1a1a1a;
+  --input: #1b1b1b;
+  --ring: #0083ff;
+  --destructive: #bb0916;
+
+  /* Timeline Colors */
+  --timeline-bg: #030303;
+  --timeline-track-bg: #070707;
+  --timeline-clip-video: #054180;
+  --timeline-clip-audio: #004b1b;
+  --timeline-clip-selected: #0083ff;
+  --playhead: #ff6b3f;
+
+  /* Chart Colors */
+  --chart-1: #0083ff;
+  --chart-2: #008e3e;
+  --chart-3: #eb5833;
+  --chart-4: #855bdc;
+  --chart-5: #b57000;
+}
+
+@theme {
+  --font-sans: "Geist Variable", sans-serif;
+  --font-mono: "JetBrains Mono", "JetBrains Mono Fallback";
+
+  /* Custom Colors mapping */
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-primary: var(--primary);
+  --color-secondary: var(--secondary);
+  --color-muted: var(--muted);
+  --color-accent: var(--accent);
+
+  --color-card: var(--card);
+  --color-popover: var(--popover);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-destructive: var(--destructive);
+
+  --color-timeline-bg: var(--timeline-bg);
+  --color-timeline-track-bg: var(--timeline-track-bg);
+  --color-timeline-clip-video: var(--timeline-clip-video);
+  --color-timeline-clip-audio: var(--timeline-clip-audio);
+  --color-timeline-clip-selected: var(--timeline-clip-selected);
+  --color-playhead: var(--playhead);
+
+  --color-chart-1: var(--chart-1);
+  --color-chart-2: var(--chart-2);
+  --color-chart-3: var(--chart-3);
+  --color-chart-4: var(--chart-4);
+  --color-chart-5: var(--chart-5);
+
+  /* Typography */
+  --text-headline-1: 2.25rem;
+  --text-headline-1--line-height: 1.2;
+
+  --text-headline-2: 2rem;
+  --text-headline-2--line-height: 1.2;
+
+  --text-headline-3: 1.75rem;
+  --text-headline-3--line-height: 1.2;
+
+  --text-headline-4: 1.5rem;
+  --text-headline-4--line-height: 1.2;
+
+  --text-headline-5: 1.25rem;
+  --text-headline-5--line-height: 1.2;
+
+  --text-headline-6: 1rem;
+  --text-headline-6--line-height: 1.2;
+
+  --text-body-1: 1rem;
+  --text-body-1--line-height: 1.5;
+
+  --text-body-2: 0.875rem;
+  --text-body-2--line-height: 1.5;
+
+  --text-body-3: 0.75rem;
+  --text-body-3--line-height: 1.5;
+
+  /* Font Weights */
+  --font-weight-normal: 400;
+  --font-weight-medium: 500;
+  --font-weight-semibold: 600;
+  --font-weight-bold: 700;
+}
+
+@layer base {
+  * {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+  }
+
+  body {
+    @apply bg-background text-foreground;
+  }
+
+  html {
+    @apply font-sans;
+  }
+}

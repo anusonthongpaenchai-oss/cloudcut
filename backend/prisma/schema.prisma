@@ -1,0 +1,435 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// ===== Users & Workspaces Domain =====
+// Responsibility: จัดการข้อมูลผู้ใช้งาน การแบ่งแยกพื้นที่ทำงาน (Workspace) และสิทธิ์การเข้าถึง
+
+model User {
+  id             String    @id @default(uuid())
+  email          String    @unique
+  password_hash  String?
+  name           String
+  avatar_url     String?
+  oauth_provider String?
+  created_at     DateTime  @default(now())
+  updated_at     DateTime  @updatedAt
+  deleted_at     DateTime?
+
+  workspaces_owned Workspace[] // User สร้าง Workspace ได้หลายอัน (1:N)
+  memberships      WorkspaceMember[] // User เป็นสมาชิกใน Workspace หลายอัน
+  projects_created Project[] // User สร้าง Project ได้หลายอัน (1:N)
+  assets_uploaded  Asset[] // User อัปโหลด Asset ได้หลายอัน (1:N)
+  export_jobs      ExportJob[] // Export งานที่ User สั่ง (1:N)
+  operation_logs   OperationLog[] // Log การกระทำของ User (1:N)
+  sent_invitations Invitation[] // User ส่งคำเชิญไปหลายคน (1:N)
+}
+
+enum WorkspacePlan {
+  free
+  pro
+  team
+}
+
+model Workspace {
+  id         String        @id @default(uuid())
+  name       String
+  slug       String        @unique
+  plan       WorkspacePlan @default(free) // free | pro | team
+  owner_id   String
+  created_at DateTime      @default(now())
+  updated_at DateTime      @updatedAt
+  deleted_at DateTime?
+
+  // relation
+  owner User @relation(fields: [owner_id], references: [id])
+
+  members     WorkspaceMember[] // Workspace มีสมาชิกได้หลายคน (1:N)
+  invitations Invitation[] // Workspace สร้างคำเชิญได้หลายครั้ง (1:N)
+  projects    Project[] // Workspace เก็บ Project ได้หลายงาน (1:N)
+}
+
+enum MemberRoles {
+  owner
+  admin
+  editor
+  viewer
+}
+
+model WorkspaceMember {
+  id           String      @id @default(uuid())
+  workspace_id String
+  user_id      String
+  role         MemberRoles // owner | admin | editor | viewer
+  created_at   DateTime    @default(now())
+  updated_at   DateTime    @updatedAt
+
+  // relation
+  workspace Workspace @relation(fields: [workspace_id], references: [id])
+  user      User      @relation(fields: [user_id], references: [id])
+
+  // ป้องกันไม่ให้ User คนเดียวกัน เข้าร่วม Workspace เดิมซ้ำซ้อน
+  @@unique([workspace_id, user_id])
+}
+
+enum InvitationStatus {
+  pending
+  accepted
+  expired
+}
+
+model Invitation {
+  id           String           @id @default(uuid())
+  workspace_id String
+  email        String
+  role         MemberRoles // owner | admin | editor | viewer
+  status       InvitationStatus @default(pending)
+  token        String           @unique
+  invited_by   String
+  expires_at   DateTime
+  created_at   DateTime         @default(now())
+  updated_at   DateTime         @updatedAt
+
+  // relation
+  workspace Workspace @relation(fields: [workspace_id], references: [id])
+  inviter   User      @relation(fields: [invited_by], references: [id])
+}
+
+// ===== Projects & Assets Domain =====
+// Responsibility: จัดการการตั้งค่าโปรเจกต์วิดีโอ และไฟล์ต้นฉบับ/ไฟล์แปลงที่ถูกอัปโหลดเข้ามา
+
+model Project {
+  id           String    @id @default(uuid())
+  workspace_id String
+  name         String
+  description  String?
+  settings     Json
+  created_by   String
+  created_at   DateTime  @default(now())
+  updated_at   DateTime  @updatedAt
+  deleted_at   DateTime?
+
+  // relation
+  workspace Workspace @relation(fields: [workspace_id], references: [id])
+  author    User      @relation(fields: [created_by], references: [id])
+
+  assets         Asset[] // Project เก็บ Asset ได้หลายงาน (1:N)
+  tracks         Track[] // Project เก็บ Track ได้หลายงาน (1:N)
+  clips          Clip[] // Project เก็บ Clip ได้หลายงาน (1:N)
+  transitions    Transition[] // Project เก็บ Transition ได้หลายงาน (1:N)
+  text_overlays  TextOverlay[] // Project เก็บ TextOverlay ได้หลายงาน (1:N)
+  export_jobs    ExportJob[] // Project เก็บ ExportJob ได้หลายงาน (1:N)
+  operation_logs OperationLog[] // Project เก็บ OperationLog ได้หลายงาน (1:N)
+
+  // สำหรับทำ Cursor Pagination เวลาดึงรายการ Project ใน Workspace ล่าสุด
+  @@index([workspace_id, updated_at(sort: Desc)])
+}
+
+enum AssetStatus {
+  uploading
+  processing
+  ready
+  failed
+}
+
+enum AssetType {
+  video
+  audio
+  image
+}
+
+model Asset {
+  id           String      @id @default(uuid())
+  project_id   String
+  upload_by    String
+  type         AssetType // video | audio | image
+  original_url String
+  status       AssetStatus @default(uploading) // uploading | processing | ready | failed
+  metadata     Json?       @default("{}") // เก็บข้อมูลไฟล์ เช่น { duration_ms: 5000, width: 1920, height: 1080 }
+  created_at   DateTime    @default(now())
+  updated_at   DateTime    @updatedAt
+  deleted_at   DateTime?
+
+  // relation 
+  project  Project @relation(fields: [project_id], references: [id])
+  uploader User    @relation(fields: [upload_by], references: [id])
+
+  variants        AssetVariant[] // Asset หนึ่งไฟล์ สามารถแตกเป็นไฟล์ย่อยได้ (เช่น proxy, thumbnail) (1:N)
+  clips           Clip[] // Asset ถูกนำไปหั่นใช้ใน Timeline ได้หลายที่ (1:N)
+  processing_jobs ProcessingJob[] // Asset หนึ่งไฟล์ อาจจะมี Job ที่กำลังรอประมวลผลอยู่หลาย Job (1:N)
+
+  // สำหรับ Query หา Asset ตามสถานะ (เช่น หาไฟล์ที่ยัง processing อยู่)
+  @@index([project_id, status])
+}
+
+enum AssetVariantType {
+  proxy
+  thumbnail_strip
+  waveform_data
+}
+
+model AssetVariant {
+  id         String           @id @default(uuid())
+  asset_id   String
+  type       AssetVariantType // proxy | thumbnail_strip | waveform_data
+  url        String
+  metadata   Json
+  created_at DateTime         @default(now())
+
+  // relation
+  asset Asset @relation(fields: [asset_id], references: [id])
+}
+
+// ===== Timeline Engine Domain =====
+// Responsibility: โครงสร้างหลักของการตัดต่อ (Non-linear editing) จัดเก็บลำดับ ตำแหน่ง และเอฟเฟกต์
+
+enum TrackType {
+  video
+  audio
+}
+
+model Track {
+  id          String    @id @default(uuid())
+  project_id  String
+  type        TrackType // video | audio
+  label       String
+  order_index Int
+  is_locked   Boolean   @default(false)
+  is_muted    Boolean   @default(false)
+  color       String
+  created_at  DateTime  @default(now())
+  updated_at  DateTime  @updatedAt
+
+  // relation
+  project Project @relation(fields: [project_id], references: [id])
+
+  clips Clip[] // Track เก็บ Clip ได้หลายงาน (1:N)
+
+  // สำหรับดึง Track ขึ้นมาเรียงลำดับวาด UI
+  @@index([project_id, order_index])
+}
+
+model Clip {
+  id         String @id @default(uuid())
+  project_id String
+  track_id   String
+  asset_id   String
+  name       String
+
+  // Timeline Metrics
+  track_position_ms Int // จุดเริ่มต้นบน Timeline หลัก
+  in_point_ms       Int // จุดตัดหัวคลิปจากไฟล์ต้นฉบับ
+  out_point_ms      Int // จุดตัดท้ายคลิปจากไฟล์ต้นฉบับ
+  duration_ms       Int // ความยาวสุทธิของคลิป
+
+  // Timeline Transform & State
+  transform  Json?     @default("{}") // Transform Properties เช่น { x, y, scale, rotation, opacity }
+  version    Int       @default(1)
+  created_at DateTime  @default(now())
+  updated_at DateTime  @updatedAt
+  deleted_at DateTime?
+
+  // relation
+  project Project @relation(fields: [project_id], references: [id])
+  track   Track   @relation(fields: [track_id], references: [id])
+  asset   Asset   @relation(fields: [asset_id], references: [id])
+
+  effects          ClipEffect[] // คลิปหนึ่งชิ้น ใส่ฟิลเตอร์/เอฟเฟกต์ได้หลายอัน (1:N)
+  transitions_to   Transition[] @relation("TransitionTo") // คลิปที่ถูกเชื่อมเข้ามา
+  transitions_from Transition[] @relation("TransitionFrom") // คลิปที่เชื่อมส่งออกไป
+
+  // ดึงคลิปตามลำดับเวลาเพื่อไป Render
+  @@index([project_id, track_id, track_position_ms])
+}
+
+enum ClipEffectType {
+  brightness
+  contrast
+  saturation
+  blur
+}
+
+model ClipEffect {
+  id          String         @id @default(uuid())
+  clip_id     String
+  type        ClipEffectType // brightness | contrast | saturation | blur
+  order_index Int
+  params      Json
+  enabled     Boolean        @default(true)
+
+  // relation
+  clip Clip @relation(fields: [clip_id], references: [id])
+
+  // ดึงลำดับเอฟเฟกต์
+  @@index([clip_id, order_index])
+}
+
+enum TransitionType {
+  dissolve
+  wipe_left
+  wipe_right
+  fade
+}
+
+model Transition {
+  id           String         @id @default(uuid())
+  project_id   String
+  from_clip_id String
+  to_clip_id   String
+  type         TransitionType // dissolve | wipe_left | wipe_right | fade
+  duration_ms  Int
+  params       Json?          @default("{}")
+  created_at   DateTime       @default(now())
+  updated_at   DateTime       @updatedAt
+
+  // relation
+  project   Project @relation(fields: [project_id], references: [id])
+  from_clip Clip    @relation("TransitionFrom", fields: [from_clip_id], references: [id])
+  to_clip   Clip    @relation("TransitionTo", fields: [to_clip_id], references: [id])
+}
+
+enum TextOverlayAnimation {
+  fade_in
+  typewriter
+  none
+}
+
+model TextOverlay {
+  id                 String               @id @default(uuid())
+  project_id         String
+  track_position_ms  Int
+  duration_ms        Int
+  content            String
+  font_family        String
+  font_size          Int
+  text_color         String
+  position           Json
+  alignment          String
+  background_color   String?
+  background_opacity Float?
+  animation          TextOverlayAnimation // fade_in | typewriter | none
+  created_at         DateTime             @default(now())
+  updated_at         DateTime             @updatedAt
+
+  // relation
+  project Project @relation(fields: [project_id], references: [id])
+}
+
+// ===== Queue & Telemetry Domain =====
+// Responsibility: ระบบ Background Jobs, การ Render และการเก็บ Log การทำงานแบบ Real-time
+enum ExportFormat {
+  mp4
+  webm
+}
+
+enum ExportResolution {
+  p720
+  p1080
+  p4k
+}
+
+enum ExportQuality {
+  draft
+  standard
+  high
+}
+
+enum ExportStatus {
+  queued
+  processing
+  uploading
+  completed
+  failed
+  canceled
+}
+
+model ExportJob {
+  id               String           @id @default(uuid())
+  project_id       String
+  request_by       String
+  format           ExportFormat // mp4 | webm
+  resolution       ExportResolution // 720p | 1080p | 4k
+  quality          ExportQuality // draft | standard | high
+  status           ExportStatus // queued | processing | uploading | completed | failed | canceled
+  progress_percent Int              @default(0)
+  output_url       String?
+  output_file_size Int?
+  started_at       DateTime?
+  completed_at     DateTime?
+  expires_at       DateTime?
+  error_message    String?
+  idempotency_key  String?          @unique
+  created_at       DateTime         @default(now())
+  updated_at       DateTime         @updatedAt
+
+  // relation
+  project   Project @relation(fields: [project_id], references: [id])
+  requester User    @relation(fields: [request_by], references: [id])
+
+  processing_jobs ProcessingJob[] // ExportJob หนึ่งงาน อาจจะมี Job ที่กำลังรอประมวลผลอยู่หลาย Job (1:N)
+
+  // index
+  @@index([project_id, created_at])
+  @@index([status, created_at])
+}
+
+enum ProcessingJobKind {
+  extract_metadata
+  generate_proxy
+  generate_thumbnails
+  extract_waveform
+  render_export
+  cleanup
+}
+
+enum ProcessingJobStatus {
+  queued
+  processing
+  completed
+  failed
+  dead_letter
+}
+
+model ProcessingJob {
+  id            String              @id @default(uuid())
+  kind          ProcessingJobKind // extract_metadata | generate_proxy | generate_thumbnails | extract_waveform | render_export | cleanup
+  status        ProcessingJobStatus // queued | processing | completed | failed | dead_letter
+  payload       Json?
+  attempts      Int                 @default(0)
+  max_attempts  Int                 @default(3)
+  next_run_at   DateTime?
+  error_message String?
+  asset_id      String?
+  export_job_id String?
+  created_at    DateTime            @default(now())
+  updated_at    DateTime            @updatedAt
+
+  // relation
+  asset      Asset?     @relation(fields: [asset_id], references: [id])
+  export_job ExportJob? @relation(fields: [export_job_id], references: [id])
+}
+
+model OperationLog {
+  id             String   @id @default(uuid())
+  project_id     String
+  user_id        String
+  operation_type String
+  payload        Json
+  client_seq     Int
+  server_seq     Int      @default(autoincrement()) // ใช้ autoincrement ช่วยจัดคิวเหตุการณ์ฝั่งเซิร์ฟเวอร์ (CRDT/OT)
+  created_at     DateTime @default(now())
+
+  // relation
+  project Project @relation(fields: [project_id], references: [id])
+  user    User    @relation(fields: [user_id], references: [id])
+
+  // สำหรับดึง History ตามเวลา หรือเรียงตามลำดับ Sequence ของ Server
+  @@index([project_id, created_at])
+  @@index([project_id, server_seq])
+  // สำหรับ query "ประวัติการกระทำของ User คนนี้"
+  @@index([user_id, created_at])
+}
