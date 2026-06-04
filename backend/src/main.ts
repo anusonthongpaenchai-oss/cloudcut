@@ -1,6 +1,8 @@
 import Fastify from "fastify";
+import fastifyJwt from "@fastify/jwt";
 import cors from "@fastify/cors";
 import healthRoutes from "./routes/health.js";
+import { authRoutes } from "./routes/auth.route.js";
 
 // ===== Server Instance =====
 // Responsibility: จัดการเว็บเซิร์ฟเวอร์และ Routing
@@ -22,9 +24,22 @@ server.register(cors, {
   origin: true,
 });
 
+// Auth JWT
+if (!process.env.JWT_SECRET) {
+  throw new Error("JWT_SECRET is not defined in environment variables");
+}
 
-// Register routes
+server.register(fastifyJwt, {
+  secret: process.env.JWT_SECRET,
+});
+
+// ===== Register Routes =====
+
+// Health Check
 server.register(healthRoutes);
+
+// Auth Routes
+server.register(authRoutes);
 
 const start = async () => {
   try {
