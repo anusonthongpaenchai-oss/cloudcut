@@ -2,9 +2,8 @@ import "dotenv/config";
 import { PrismaClient } from "@prisma/client";
 import { Pool } from "pg";
 import { PrismaPg } from "@prisma/adapter-pg";
-import bcrypt from "bcryptjs";
+import * as argon2 from "argon2";
 
-// 1. Setup Prisma Client ด้วย Adapter แบบเดียวกับที่คุณทำไว้ใน db.ts
 const pool = new Pool({ connectionString: process.env.DATABASE_URL });
 const adapter = new PrismaPg(pool);
 const prisma = new PrismaClient({ adapter });
@@ -12,10 +11,11 @@ const prisma = new PrismaClient({ adapter });
 async function main() {
   console.log("Starting database seeding...");
 
-  // 1. จำลองรหัสผ่าน
-  const passwordHash = await bcrypt.hash("password123", 10);
+  // ===== Data Seeding =====
+  // Responsibility: สร้าง Hash รหัสผ่านตั้งต้นด้วย Argon2 เพื่อใช้กับ User ทดสอบ
+  const passwordHash = await argon2.hash("password123");
 
-  // 2. สร้าง User 2 คน
+  // สร้าง User 2 คน
   const user1 = await prisma.user.create({
     data: {
       email: "alice@example.com",
@@ -48,7 +48,7 @@ async function main() {
     },
   });
 
-  // 4. สร้าง Project
+  // สร้าง Project
   const project = await prisma.project.create({
     data: {
       workspace_id: workspace.id,
@@ -58,7 +58,7 @@ async function main() {
     },
   });
 
-  // 5. สร้าง Asset สมมติ (ไฟล์วิดีโอต้นฉบับ)
+  // สร้าง Asset สมมติ (ไฟล์วิดีโอต้นฉบับ)
   const asset = await prisma.asset.create({
     data: {
       project_id: project.id,
@@ -70,7 +70,7 @@ async function main() {
     },
   });
 
-  // 6. สร้าง Tracks
+  // สร้าง Tracks
   const videoTrack1 = await prisma.track.create({
     data: {
       project_id: project.id,
@@ -90,7 +90,7 @@ async function main() {
     },
   });
 
-  // 7. สร้าง Clips โยนลง Track
+  // สร้าง Clips โยนลง Track
   await prisma.clip.createMany({
     data: [
       {

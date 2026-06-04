@@ -4,6 +4,7 @@ packages:
   - 'worker'
 allowBuilds:
   '@prisma/engines': true
+  argon2: true
   esbuild: true
   msw: true
   prisma: true
