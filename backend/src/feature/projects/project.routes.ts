@@ -2,6 +2,7 @@ import type { FastifyInstance } from "fastify";
 import { authExtractor } from "../../middlewares/auth.middleware.js";
 import { requireProjectRole } from "../../middlewares/project.middleware.js";
 import { ProjectController } from "./project.controller.js";
+import { timelineRoutes } from "../timeline/timeline.routes.js";
 
 export const projectRoutes = async (fastify: FastifyInstance) => {
   // ทุก route ต้องผ่าน JWT verification ก่อน
@@ -70,4 +71,8 @@ export const projectRoutes = async (fastify: FastifyInstance) => {
     },
     ProjectController.createProjectVersion,
   );
+
+  // --- Timeline Routes (sub-plugin) ---
+  // register timeline routes เป็น sub-plugin เพื่อ share prefix /projects
+  fastify.register(timelineRoutes);
 };
