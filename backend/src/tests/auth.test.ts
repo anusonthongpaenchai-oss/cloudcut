@@ -1,14 +1,14 @@
 import { describe, it, expect, beforeAll, afterAll } from "vitest";
 import Fastify from "fastify";
 import fastifyJwt from "@fastify/jwt";
-import { authRoutes } from "../routes/auth.route.js";
+import { authRoutes } from "../feature/auth/auth.routes.js";
 import { db } from "../config/db.js";
 
 // ===== Helper: สร้าง Server จำลองสำหรับ Test =====
 const buildTestServer = () => {
   const server = Fastify();
   server.register(fastifyJwt, { secret: "test_secret_key" });
-  server.register(authRoutes);
+  server.register(authRoutes, { prefix: "/auth" });
 
   return server;
 };

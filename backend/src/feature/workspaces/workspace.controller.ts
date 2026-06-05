@@ -1,17 +1,17 @@
 import type { FastifyReply, FastifyRequest } from "fastify";
-import { db } from "../config/db.js";
+import { db } from "../../config/db.js";
 import type {
-    AcceptInviteInput,
-    CreateWorkspaceInput,
-    InviteMemberInput,
-    UpdateRoleInput,
-} from "../schemas/workspace.schema.js";
+  AcceptInviteInput,
+  CreateWorkspaceInput,
+  InviteMemberInput,
+  UpdateRoleInput,
+} from "./workspace.schema.js";
 import {
-    createWorkspaceSchema,
-    inviteMemberSchema,
-    updateRoleSchema,
-    acceptInviteSchema,
-} from "../schemas/workspace.schema.js";
+  createWorkspaceSchema,
+  inviteMemberSchema,
+  updateRoleSchema,
+  acceptInviteSchema,
+} from "./workspace.schema.js";
 import crypto from "crypto";
 
 // ===== 1. สร้าง Workspace (POST /workspaces) =====
@@ -22,7 +22,9 @@ export const createWorkspace = async (
   try {
     const validateRequest = createWorkspaceSchema.safeParse(request.body);
     if (!validateRequest.success) {
-      reply.status(400).send({ error: validateRequest.error.issues[0]?.message });
+      reply
+        .status(400)
+        .send({ error: validateRequest.error.issues[0]?.message });
       return;
     }
 
@@ -144,7 +146,9 @@ export const inviteMember = async (
   try {
     const validateRequest = inviteMemberSchema.safeParse(request.body);
     if (!validateRequest.success) {
-      reply.status(400).send({ error: validateRequest.error.issues[0]?.message });
+      reply
+        .status(400)
+        .send({ error: validateRequest.error.issues[0]?.message });
       return;
     }
 
@@ -154,12 +158,10 @@ export const inviteMember = async (
 
     const userToInvite = await db.user.findUnique({ where: { email } });
     if (!userToInvite) {
-      reply
-        .status(404)
-        .send({
-          error: "Not Found",
-          message: "User with this email not found",
-        });
+      reply.status(404).send({
+        error: "Not Found",
+        message: "User with this email not found",
+      });
       return;
     }
 
@@ -216,7 +218,9 @@ export const updateMemberRole = async (
   try {
     const validateRequest = updateRoleSchema.safeParse(request.body);
     if (!validateRequest.success) {
-      reply.status(400).send({ error: validateRequest.error.issues[0]?.message });
+      reply
+        .status(400)
+        .send({ error: validateRequest.error.issues[0]?.message });
       return;
     }
 
@@ -233,22 +237,18 @@ export const updateMemberRole = async (
     });
 
     if (!targetMember) {
-      reply
-        .status(404)
-        .send({
-          error: "Not Found",
-          message: "Member not found in this workspace",
-        });
+      reply.status(404).send({
+        error: "Not Found",
+        message: "Member not found in this workspace",
+      });
       return;
     }
 
     if (targetMember.role === "owner") {
-      reply
-        .status(403)
-        .send({
-          error: "Forbidden",
-          message: "Cannot change the role of the workspace owner",
-        });
+      reply.status(403).send({
+        error: "Forbidden",
+        message: "Cannot change the role of the workspace owner",
+      });
       return;
     }
 
@@ -291,22 +291,18 @@ export const removeMember = async (
     });
 
     if (!targetMember) {
-      reply
-        .status(404)
-        .send({
-          error: "Not Found",
-          message: "Member not found in this workspace",
-        });
+      reply.status(404).send({
+        error: "Not Found",
+        message: "Member not found in this workspace",
+      });
       return;
     }
 
     if (targetMember.role === "owner") {
-      reply
-        .status(403)
-        .send({
-          error: "Forbidden",
-          message: "Cannot remove the workspace owner",
-        });
+      reply.status(403).send({
+        error: "Forbidden",
+        message: "Cannot remove the workspace owner",
+      });
       return;
     }
 
@@ -331,12 +327,14 @@ export const removeMember = async (
 // ===== 7. ยอมรับคำเชิญ (POST /workspaces/accept-invite) =====
 export const acceptInvite = async (
   request: FastifyRequest<{ Body: AcceptInviteInput }>,
-  reply: FastifyReply
+  reply: FastifyReply,
 ) => {
   try {
     const validateRequest = acceptInviteSchema.safeParse(request.body);
     if (!validateRequest.success) {
-      reply.status(400).send({ error: validateRequest.error.issues[0]?.message });
+      reply
+        .status(400)
+        .send({ error: validateRequest.error.issues[0]?.message });
       return;
     }
 
@@ -349,38 +347,65 @@ export const acceptInvite = async (
     });
 
     if (!invitation) {
-      reply.status(404).send({ error: "Not Found", message: "Invalid invitation token" });
+      reply
+        .status(404)
+        .send({ error: "Not Found", message: "Invalid invitation token" });
       return;
     }
 
     // เช็กสถานะว่าถูกใช้ไปแล้วหรือยัง
     if (invitation.status !== "pending") {
-      reply.status(400).send({ error: "Bad Request", message: "Invitation is already accepted or expired" });
+      reply
+        .status(400)
+        .send({
+          error: "Bad Request",
+          message: "Invitation is already accepted or expired",
+        });
       return;
     }
 
     // เช็กวันหมดอายุ
     if (new Date() > invitation.expires_at) {
       // (Optional) แอบเปลี่ยนสถานะให้เป็น expired ใน DB
-      await db.invitation.update({ where: { id: invitation.id }, data: { status: "expired" } });
-      reply.status(400).send({ error: "Bad Request", message: "Invitation has expired" });
+      await db.invitation.update({
+        where: { id: invitation.id },
+        data: { status: "expired" },
+      });
+      reply
+        .status(400)
+        .send({ error: "Bad Request", message: "Invitation has expired" });
       return;
     }
 
     // เช็กว่าอีเมลของคนที่ล็อกอิน ตรงกับอีเมลที่ถูกเชิญไหม (ดึงอีเมลจาก DB มาเทียบ)
     const currentUser = await db.user.findUnique({ where: { id: userId } });
     if (currentUser?.email !== invitation.email) {
-      reply.status(403).send({ error: "Forbidden", message: "This invitation was sent to a different email address" });
+      reply
+        .status(403)
+        .send({
+          error: "Forbidden",
+          message: "This invitation was sent to a different email address",
+        });
       return;
     }
 
     // เช็กว่าอยู่ใน Workspace นี้อยู่แล้วหรือไม่ (เผื่อกรณีบั๊ก)
     const existingMember = await db.workspaceMember.findUnique({
-      where: { workspace_id_user_id: { workspace_id: invitation.workspace_id, user_id: userId } },
+      where: {
+        workspace_id_user_id: {
+          workspace_id: invitation.workspace_id,
+          user_id: userId,
+        },
+      },
     });
-    
+
     if (existingMember) {
-      reply.status(400).send({ error: "Bad Request", message: "You are already a member of this workspace" });
+      reply
+        .status(400)
+        .send({
+          error: "Bad Request",
+          message: "You are already a member of this workspace",
+        });
       return;
     }
 

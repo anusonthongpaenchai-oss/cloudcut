@@ -1,5 +1,5 @@
 import * as argon2 from "argon2";
-import { UserRepository } from "../repositories/user.repository.js";
+import { UserRepository } from "../../repositories/user.repository.js";
 
 export class AuthService {
   // ===== Registration Logic =====

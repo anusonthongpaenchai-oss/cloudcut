@@ -11,6 +11,15 @@ const prisma = new PrismaClient({ adapter });
 async function main() {
   console.log("Starting database seeding...");
 
+  // ===== Clear Existing Data =====
+  await prisma.clip.deleteMany({});
+  await prisma.track.deleteMany({});
+  await prisma.asset.deleteMany({});
+  await prisma.project.deleteMany({});
+  await prisma.workspaceMember.deleteMany({});
+  await prisma.workspace.deleteMany({});
+  await prisma.user.deleteMany({});
+
   // ===== Data Seeding =====
   // Responsibility: สร้าง Hash รหัสผ่านตั้งต้นด้วย Argon2 เพื่อใช้กับ User ทดสอบ
   const passwordHash = await argon2.hash("password123");

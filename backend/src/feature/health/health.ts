@@ -1,5 +1,5 @@
 import type { FastifyPluginAsync } from "fastify";
-import { db } from "../config/db.js";
+import { db } from "../../config/db.js";
 
 const healthRoutes: FastifyPluginAsync = async (server) => {
   server.get("/health", async (request, reply) => {

@@ -7,14 +7,14 @@ import {
   updateMemberRole,
   removeMember,
   acceptInvite,
-} from "../controllers/workspace.controller.js";
-import { authExtractor } from "../middlewares/auth.middlewares.js";
-import { requireWorkspaceRole } from "../middlewares/workspace.schema.js";
+} from "./workspace.controller.js";
+import { authExtractor } from "../../middlewares/auth.middleware.js";
+import { requireWorkspaceRole } from "../../middlewares/workspace.middleware.js";
 import type {
   AcceptInviteInput,
   InviteMemberInput,
   UpdateRoleInput,
-} from "../schemas/workspace.schema.js";
+} from "./workspace.schema.js";
 
 export const workspaceRoutes = async (fastify: FastifyInstance) => {
   fastify.addHook("preHandler", authExtractor);
