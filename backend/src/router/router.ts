@@ -5,6 +5,7 @@ import { workspaceRoutes } from "../feature/workspaces/workspace.routes.js";
 import { projectRoutes } from "../feature/projects/project.routes.js";
 import { assetRoutes } from "../feature/assets/asset.routes.js";
 import { exportRoutes } from "../feature/exports/export.routes.js";
+import { collaborationRoutes } from "../feature/collaboration/collaboration.routes.js";
 
 export const apiRouter = async (server: FastifyInstance) => {
   // Health Check
@@ -24,5 +25,7 @@ export const apiRouter = async (server: FastifyInstance) => {
 
   // Export Routes (register at root — mixed prefixes: /projects/:id/exports & /exports/:id)
   server.register(exportRoutes);
-};
 
+  // Collaboration Routes (register at root — mixed prefixes: /pusher/auth & /projects/:id/operations)
+  server.register(collaborationRoutes);
+};
