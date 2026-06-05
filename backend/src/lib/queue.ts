@@ -11,3 +11,9 @@ const connection = {
 export const processingQueue = new Queue("processing-jobs", {
   connection,
 });
+
+// สร้าง Queue สำหรับ Render/Export Jobs แยกต่างหาก
+// ใช้ queue name: render-jobs ตาม requirements
+export const renderQueue = new Queue("render-jobs", {
+  connection,
+});
