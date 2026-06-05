@@ -35,6 +35,23 @@ services:
       - minio_data:/data
     restart: unless-stopped
 
+  # สร้าง Bucket อัตโนมัติ
+  createbuckets:
+    image: minio/mc
+    container_name: cloudcut-createbuckets
+    depends_on:
+      - minio
+    entrypoint: >
+      /bin/sh -c "
+      echo 'Waiting for MinIO to start...';
+      sleep 5;
+      /usr/bin/mc config host add myminio http://minio:9000 ${MINIO_ROOT_USER:-admin} ${MINIO_ROOT_PASSWORD:-password123};
+      /usr/bin/mc mb myminio/cloudcut-assets --ignore-existing;
+      /usr/bin/mc anonymous set public myminio/cloudcut-assets;
+      echo 'Bucket cloudcut-assets ready!';
+      exit 0;
+      "
+
 volumes:
   postgres_data:
   redis_data:

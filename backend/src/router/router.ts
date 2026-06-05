@@ -3,6 +3,7 @@ import healthRoutes from "../feature/health/health.js";
 import { authRoutes } from "../feature/auth/auth.routes.js";
 import { workspaceRoutes } from "../feature/workspaces/workspace.routes.js";
 import { projectRoutes } from "../feature/projects/project.routes.js";
+import { assetRoutes } from "../feature/assets/asset.routes.js";
 
 export const apiRouter = async (server: FastifyInstance) => {
   // Health Check
@@ -16,4 +17,7 @@ export const apiRouter = async (server: FastifyInstance) => {
 
   // Project Routes
   server.register(projectRoutes, { prefix: "/projects" });
+
+  // Asset Routes
+  server.register(assetRoutes, { prefix: "/assets" });
 };
