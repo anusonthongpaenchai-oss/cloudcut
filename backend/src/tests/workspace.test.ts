@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeAll, afterAll } from "vitest";
 import Fastify, { type FastifyInstance } from "fastify";
-import { workspaceRoutes } from "../routes/workspace.routes.js";
+import { workspaceRoutes } from "../feature/workspaces/workspace.routes.js";
 
 import { db } from "../config/db.js";
 
@@ -45,8 +45,8 @@ describe("Workspace API Endpoints", () => {
     });
     app.addHook("onRequest", async (request) => {
       // อ่าน Header 'x-mock-user-id' เพื่อจำลองว่าเป็นใครล็อกอินเข้ามา
-      const userId = request.headers["x-mock-user-id"] || mockOwnerId;
-      request.user = { id: userId };
+      const userId = (request.headers["x-mock-user-id"] as string) || mockOwnerId;
+      request.user = { id: userId, email: "mock@example.com" };
     });
 
     // Register Test
@@ -78,7 +78,7 @@ describe("Workspace API Endpoints", () => {
     });
 
     const body = JSON.parse(response.payload);
-    if (response.statusCode !== 201) console.log('ERROR:', body);
+    if (response.statusCode !== 201) console.log("ERROR:", body);
 
     expect(response.statusCode).toBe(201);
     expect(body.workspace.name).toBe("Test Vitest Workspace");

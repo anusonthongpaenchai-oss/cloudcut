@@ -1,7 +1,7 @@
 import type { FastifyReply, FastifyRequest } from "fastify";
 import { db } from "../config/db.js";
 
-// ประกาศ Type 
+// ประกาศ Type
 type Role = "owner" | "admin" | "editor" | "viewer";
 
 export const requireWorkspaceRole = (allowedRoles: Role[]) => {

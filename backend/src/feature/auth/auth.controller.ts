@@ -1,6 +1,6 @@
 import type { FastifyRequest, FastifyReply } from "fastify";
-import { AuthService } from "../services/auth.service.js";
-import { registerSchema, loginSchema } from "../schemas/auth.schema.js";
+import { AuthService } from "./auth.service.js";
+import { registerSchema, loginSchema } from "./auth.schema.js";
 
 export class AuthController {
   // ===== Register Handler =====
@@ -115,7 +115,7 @@ export class AuthController {
   // Responsibility: ส่งข้อมูลโปรไฟล์ล่าสุดของผู้ใช้กลับไป (ใช้งานได้เฉพาะคนที่มี Access Token ที่ถูกต้องเท่านั้น)
   static async getMe(request: FastifyRequest, reply: FastifyReply) {
     try {
-      const user = request.user as { id: string; emali: string };
+      const user = request.user as { id: string; email: string };
 
       return reply.send({ user });
     } catch (error) {

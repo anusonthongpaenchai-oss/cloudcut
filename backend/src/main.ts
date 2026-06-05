@@ -1,9 +1,7 @@
 import Fastify from "fastify";
 import fastifyJwt from "@fastify/jwt";
 import cors from "@fastify/cors";
-import healthRoutes from "./routes/health.js";
-import { authRoutes } from "./routes/auth.route.js";
-import { workspaceRoutes } from "./routes/workspace.routes.js";
+import { apiRouter } from "./router/router.js";
 
 // ===== Server Instance =====
 // Responsibility: จัดการเว็บเซิร์ฟเวอร์และ Routing
@@ -36,14 +34,8 @@ server.register(fastifyJwt, {
 
 // ===== Register Routes =====
 
-// Health Check
-server.register(healthRoutes);
-
-// Auth Routes
-server.register(authRoutes, { prefix: "/auth" });
-
-// Workspace Routes
-server.register(workspaceRoutes, { prefix: "/workspaces" });
+// Main API Router
+server.register(apiRouter);
 
 const start = async () => {
   try {
