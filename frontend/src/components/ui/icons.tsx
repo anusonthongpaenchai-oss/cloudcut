@@ -1,3 +1,5 @@
+import googleSvg from "@/assets/svg/google.svg";
+import githubSvg from "@/assets/svg/github-dark.svg";
 import {
   Palette,
   Type,
@@ -31,7 +33,16 @@ import {
   ZoomIn,
   ZoomOut,
   Maximize,
+  EyeOff,
 } from "lucide-react";
+
+export const Google = (props: React.ComponentProps<"img">) => (
+  <img src={googleSvg} alt="Google" {...props} />
+);
+
+export const Github = (props: React.ComponentProps<"img">) => (
+  <img src={githubSvg} alt="GitHub" {...props} />
+);
 
 export {
   Palette,
@@ -66,4 +77,5 @@ export {
   ZoomIn,
   ZoomOut,
   Maximize,
+  EyeOff,
 };

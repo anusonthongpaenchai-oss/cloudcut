@@ -10,7 +10,7 @@ export default function App() {
     <Routes>
       {/* Auth */}
       <Route path="/" element={<LoginPage />} />
-      <Route path="/register" element={<RegisterPage />} />
+      <Route path="/auth/register" element={<RegisterPage />} />
 
       {/* Design System */}
       <Route path="/design-system" element={<DesignSystemPage />} />
